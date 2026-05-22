@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soulstealers Rising — Prototype Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<aside>
+  <div class="sidebar-logo">
+    <span>SOULSTEALERS RISING</span>
+  </div>
+  <nav id="sidenav">
+    <div class="nav-section">Overview</div>
+    <a href="#overview">Project Summary</a>
+    <a href="#tech">Confirmed Specs</a>
+    <div class="nav-section">Dev Plan</div>
+    <a href="#arch">Architecture</a>
+    <a href="#ph0"><span class="phase-badge">0</span> Data Foundation</a>
+    <a href="#ph1"><span class="phase-badge">1</span> Rules Engine</a>
+    <a href="#ph2"><span class="phase-badge">2</span> Game Board</a>
+    <a href="#ph3"><span class="phase-badge">3</span> Deck Builder</a>
+    <a href="#ph4"><span class="phase-badge">4</span> AI Opponent</a>
+    <a href="#ph5"><span class="phase-badge">5</span> Story Mode</a>
+    <a href="#ph6"><span class="phase-badge">6</span> Networking</a>
+    <a href="#ph7"><span class="phase-badge">7</span> Soul Forge</a>
+    <a href="#ph8"><span class="phase-badge">8</span> Tutorial</a>
+    <a href="#buildorder">Build Order</a>
+  </nav>
+</aside>
+
+<main>
+
+  <div class="hero" id="overview">
+    <div class="hero-eyebrow">Pre-Production Planning</div>
+    <h1>Soulstealers Rising</h1>
+    <div class="hero-subtitle">Kickstarter Prototype - Development Plan</div>
+    <div class="hero-pills">
+      <span class="pill pill-red">Unity 6</span>
+      <span class="pill pill-gold">PC &middot; Mac &middot; Web Browser</span>
+    </div>
+  </div>
+
+  <div class="overview-grid">
+    <div class="overview-card">
+      <div class="overview-card-label">Prototype Scope</div>
+      <div class="overview-card-value">Story &middot; Arena &middot; Soul Forge &middot; Deck Builder &middot; Tutorial</div>
+    </div>
+    <div class="overview-card">
+      <div class="overview-card-label">Arena Modes</div>
+      <div class="overview-card-value">vs AI Practice &amp; 1v1 Online Custom Games</div>
+    </div>
+    <div class="overview-card">
+      <div class="overview-card-label">Decks at Launch</div>
+      <div class="overview-card-value">2 Predetermined Starting Decks</div>
+    </div>
+    <div class="overview-card">
+      <div class="overview-card-label">Online Tech</div>
+      <div class="overview-card-value">Photon (version TBC)</div>
+    </div>
+  </div>
+
+  <div id="tech" style="margin-bottom:48px;">
+    <div class="part-label">Confirmed Decisions</div>
+    <h2 style="font-family:'Cinzel',serif;font-size:20px;color:var(--text);margin-bottom:16px;">Game Specifications</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Decision</th><th>Choice</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Engine</td><td>Unity 6</td><td>Built from scratch - no legacy code carried over</td></tr>
+        <tr><td>Platforms</td><td>PC, Mac, Web Browser</td><td>WebGL affects save system and AI performance budget</td></tr>
+        <tr><td>Input</td><td>Mouse only</td><td>Unity new Input System - controller support is a future add-on, no refactor needed</td></tr>
+        <tr><td>Online</td><td>Photon</td><td>Specific product (PUN2 / Fusion / Quantum) to be confirmed</td></tr>
+        <tr><td>Story Format</td><td>1v1 vs AI, Duel only</td><td>All other formats are excluded in the prototype</td></tr>
+        <tr><td>Gameplay Stack</td><td>Full implementation</td><td>The complete rules experience is the Kickstarter's main attraction</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="part-header" id="arch">
+    <div class="part-label">Part One</div>
+    <h2>Development Plan</h2>
+  </div>
+
+  <div class="arch-note">
+    <strong>Core principle:</strong> The rules engine is built before anything else that touches gameplay. UI, AI, networking, and Story Mode are all consumers of it. Building in the wrong order means rebuilding later.<br><br>
+    The architecture follows a strict separation: <strong>Data</strong> (card definitions, game config) &rarr; <strong>Logic</strong> (rules engine, game state) &rarr; <strong>Presentation</strong> (board UI, menus). The rules engine is written in pure C# with zero Unity dependencies so it can be tested in isolation, the AI can reason over it cleanly, and the network layer can synchronise it without complexity.
+  </div>
+
+  <div class="phase" id="ph0">
+    <div class="phase-header">
+      <div class="phase-num">0</div>
+      <div class="phase-titles"><h3>Foundation &amp; Data Architecture</h3><div class="phase-desc">Build the skeleton everything else hangs off</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>Card Data Model</h4>
+      <p>Every card lives as a typed data asset. Each card type - Spirit, Spell, Secret, Ritual, Curse, Prayer: has its own definition inheriting from a shared base, covering name, type, supertype, spirit rank (Spirits only), gold status, artwork reference, and an effects list.</p>
+      <p><strong>Effects are also data objects</strong>, not hardcoded logic. A &ldquo;Steal 2&rdquo; effect is a typed object with a value of 2 - it isn&rsquo;t a function written specifically for that card. This is what makes adding new cards later seamless: new cards are authored data, not new code.</p>
+      <p>The three numeric value types in the rules require distinct representations in the data model:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Type</th><th>Example</th><th>Can Modifiers Change It?</th></tr></thead>
+        <tbody>
+          <tr><td>Symbolic</td><td>1, 2, 3</td><td>Yes</td></tr>
+          <tr><td>Word-form</td><td>one, two, three</td><td>No - permanently fixed</td></tr>
+          <tr><td>X</td><td>&ldquo;Steal X souls&rdquo;</td><td>Yes - value chosen at play time</td></tr>
+        </tbody>
+      </table></div>
+      <h4>Game State Model</h4>
+      <p>A single serialisable C# class holds the complete live state of any game: both players&rsquo; soul totals, hands, decks, discard piles, field zones, the spirit pool state, the resolution pile, whose turn it is, current phase, action counts, active modifiers, and all counters. <strong>This is the object sent across the network and the object the AI reads from.</strong> Zero Unity dependencies.</p>
+      <h4>Ownership &amp; Control Tracking</h4>
+      <p>The rules distinguish between who <strong>owns</strong> a card (the player who put it in their deck - never changes) and who <strong>controls</strong> it (the player who currently has it on the field - can change). The word &ldquo;you&rdquo; in any effect text always refers to the <em>controller</em>. Both are tracked in the game state from the start.</p>
+      <h4>Zone System</h4>
+      <p>Each zone - Main Deck, Hand, Discard Pile, Spirit Zone, Incantation Zone, Sorcery Zone, Resolution Pile, and the Side Game zone (for Namara&rsquo;s special cards) - is a typed class. Cards do not move themselves; all zone transitions are explicit operations dispatched through the rules engine. The <strong>Discard Pile preserves insertion order</strong> - several card effects interact with the top one or two cards of the pile specifically.</p>
+      <h4>Public vs Hidden Information</h4>
+      <ul>
+        <li><strong>Public zones</strong> (all players can see): Field face-up cards, Discard Pile, Resolution Pile, Side Game zone</li>
+        <li><strong>Hidden zones:</strong> Decks, each player&rsquo;s Hand</li>
+        <li><strong>Semi-public:</strong> Face-down cards in the Sorcery Zone are present but their identity is hidden; their count is public. Hand size is also public - a player must truthfully state it if asked.</li>
+      </ul>
+      <h4>Save System Interface</h4>
+      <p>Deck data, player progression, and settings all use a single save interface written to work on both desktop (local file) and browser (browser persistent storage). All other systems call this interface - nothing writes to disk directly. This must be established in Phase 0 or it becomes a refactor later.</p>
+    </div>
+  </div>
+
+  <div class="phase" id="ph1">
+    <div class="phase-header">
+      <div class="phase-num">1</div>
+      <div class="phase-titles"><h3>Core Rules Engine</h3><div class="phase-desc">Most complex system in the project - full implementation confirmed, everything depends on it</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>Turn &amp; Round Manager</h4>
+      <p>Implements the complete game sequence: Beginning of Round &rarr; Spirit pool deal &rarr; each player selects a spirit &rarr; Ready to Reveal &rarr; simultaneous reveal &rarr; ascending spirit rank determines turn order. For each turn: Start of Turn triggers (Spirit &rarr; Curses &rarr; Rituals) &rarr; Action Phase &rarr; End of Turn triggers &rarr; Draw Phase &rarr; End of Round.</p>
+      <h4>Spirit Pool System</h4>
+      <p>The spirit pool depletes across rounds and only resets when fully exhausted. In a 2-player game with 12 spirits, the pool decrements by 2 each round. The deal count scales with pool size:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Pool Size</th><th>Cards Dealt to Each Player</th></tr></thead>
+        <tbody>
+          <tr><td>8 or more</td><td>4</td></tr>
+          <tr><td>6</td><td>3</td></tr>
+          <tr><td>4</td><td>2</td></tr>
+          <tr><td>2</td><td>1 (randomly assigned)</td></tr>
+        </tbody>
+      </table></div>
+      <p>When the pool hits zero - all 12 spirits used across six rounds - all 12 are restored and the cycle begins again.</p>
+      <h4>Spirit Selection &amp; Ready to Reveal</h4>
+      <p>Each player privately selects one spirit; unchosen spirits return to the pool. The player clicks &ldquo;Ready to Reveal.&rdquo; When both players (or player and AI) have committed, the reveal fires simultaneously - the round-start sync point in both local and online play.</p>
+      <h4>Action System</h4>
+      <p>Each player has <strong>2 actions per turn</strong>, spent by: playing a card face-up (Normal Play), playing a sorcery face-down (Secret Play), or revealing a face-down spell. Extra Actions from Pact effects or card text do not cost from this budget. Recycling (once per turn) and Prayer activation are not actions.</p>
+      <h4>Resolution Stack</h4>
+      <p>The resolution pile is a <strong>LIFO stack</strong> shared across all players. When a card is played, a sorcery is revealed, an effect is activated, or a triggered effect fires, it enters the top of the pile. Before the top item resolves, all players hold priority in ascending spirit rank order. While holding priority, a player may respond by revealing a Secret whose condition is true - <em>the only thing that can happen during an opponent&rsquo;s turn</em>. When all players pass consecutively, the top item resolves.</p>
+      <div class="callout callout-note">In the digital version, the response/trigger check is automated - the engine performs checks before and after each game state change without players needing to call for them manually.</div>
+      <p><strong>Bypasses the pile entirely:</strong> Recycling, Conspiracy, Put effects, Sacrifices, and all Continuous/Static effects.</p>
+      <h4>Effect Dependency Categories</h4>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Category</th><th>Behaviour</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Unlinked</td><td>Each effect resolves independently</td><td>&ldquo;Silence a card. Banish 2 souls, +2 per silenced card&rdquo; - Banish resolves regardless of whether Silence succeeded</td></tr>
+          <tr><td>Linked</td><td>Each effect requires the previous to have resolved (&ldquo;If you do&hellip;&rdquo;)</td><td>&ldquo;Destroy 1 incantation. If you do, banish 2 souls&rdquo; - Banish only fires if Destroy resolved</td></tr>
+          <tr><td>Card Independent</td><td>Activated/Triggered effects continue even if their source card is destroyed</td><td>A Prayer activated then sacrificed as its cost - the effect still resolves</td></tr>
+          <tr><td>Card Dependent</td><td>Part of the source card&rsquo;s resolution - Negating the card removes these too</td><td>Most Spell effects</td></tr>
+        </tbody>
+      </table></div>
+      <h4>Effect Status System</h4>
+      <ul>
+        <li><strong>Active</strong> - currently in force (static field effects, or effects currently on the pile)</li>
+        <li><strong>Standby</strong> - condition-based effects waiting on the field until their condition is met, then trigger automatically</li>
+        <li><strong>Silenced</strong> - a Silence effect has stripped this effect&rsquo;s text; it cannot trigger or be activated</li>
+      </ul>
+      <h4>&ldquo;Cannot&rdquo; Rule</h4>
+      <p>If a card&rsquo;s text states that something <em>cannot</em> happen, that takes absolute precedence over any other effect or rule - including Replacement effects. These are hard stops with no exceptions.</p>
+      <h4>Optional vs Mandatory Effects</h4>
+      <p>Effects containing &ldquo;you may&rdquo; are optional. Effects with &ldquo;up to X&rdquo; are also optional (choosing zero causes the effect to Fizzle). Effects with neither are mandatory and must be performed if the game state allows.</p>
+      <h4>Fizzle vs Negate</h4>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Mechanic</th><th>Cause</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Fizzle</td><td>Passive failure - conditions no longer met, all targets illegal, or zero chosen for &ldquo;up to X&rdquo;</td><td>Effect removed from pile without resolving. Nothing actively caused this.</td></tr>
+          <tr><td>Negate</td><td>Active cancellation by another card or effect</td><td>Negated card sent to owner&rsquo;s Discard Pile. All Card Dependent effects on it are also Negated.</td></tr>
+        </tbody>
+      </table></div>
+      <h4>Infinite Loop Detection</h4>
+      <p>If mandatory triggered effects create an infinite loop, the active player chooses a positive integer and the loop runs exactly that many times before breaking. The engine must detect looping triggered effects and surface this resolution to the player.</p>
+      <h4>Target Legality at Resolution</h4>
+      <p>Targets are declared when an effect enters the pile. At resolution, the engine checks all declared targets are still legal. If all targets are illegal, the effect Fizzles.</p>
+      <h4>Zone Capacity Enforcement</h4>
+      <p>Maximum 3 incantation slots and 3 sorcery slots per player. If a card would resolve into a full subzone, it goes to the Discard Pile instead (unless using Merge). The check happens at <em>resolution</em>, not at the point of play.</p>
+      <h4>Specific Effect Implementations</h4>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Effect</th><th>Key Implementation Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="effect-name">Steal X</td><td class="effect-note">Targets an opponent. On resolution: opponent loses X souls, controller gains X souls.</td></tr>
+          <tr><td class="effect-name">Banish X</td><td class="effect-note">Targets an opponent. On resolution: opponent loses X souls only - controller gains nothing.</td></tr>
+          <tr><td class="effect-name">Give Souls</td><td class="effect-note"><strong>Distinct from Steal/Banish.</strong> Ignores Defense entirely. No dedicated Modifiers. Two forms: Imposed (&ldquo;Give X of your Souls&rdquo;) and Inflicted (&ldquo;An opponent gives you X Souls&rdquo;).</td></tr>
+          <tr><td class="effect-name">Defense</td><td class="effect-note">Cumulative Static effect on Rituals and Prayers. Reduces each Steal or Banish attempt against the controller by its value. Multiple Defense effects stack.</td></tr>
+          <tr><td class="effect-name">Modifiers</td><td class="effect-note">Only affect Symbolic and X values - never Word-form values. If a modified value would go negative, treat as 0. Modifiers can modify other Modifiers.</td></tr>
+          <tr><td class="effect-name">Merge</td><td class="effect-note">Attached card loses its name and type. Host departure sends attachments to Discard in owner-chosen order. Counters on the attached card cease. Max two cards attached per host. Ritual Merge targets own field only; Curse Merge can target any field.</td></tr>
+          <tr><td class="effect-name">Negate</td><td class="effect-note">Removes card/effect from pile, sends to Discard Pile. Negating a card-type targets the card only, not its effects separately.</td></tr>
+          <tr><td class="effect-name">Ignore</td><td class="effect-note">Static. Card is unaffected by specified types/effects but can still be targeted by them. All printed effects on the card also benefit from Ignore.</td></tr>
+          <tr><td class="effect-name">Silence</td><td class="effect-note">Strips all text from indicated field cards for a specified duration. Applies to host and all attached Merged cards as one unit. If Indestructible is Silenced, the keyword is lost and the card can be Destroyed.</td></tr>
+          <tr><td class="effect-name">Conspiracy</td><td class="effect-note">When the Secret is revealed, controller may Put (not Play) a face-down Sorcery from hand to the field <em>before</em> the Secret resolves. That Put sorcery can immediately be revealed if its condition is met. Bypasses the pile - cannot be Negated.</td></tr>
+          <tr><td class="effect-name">Secret during resolution</td><td class="effect-note">If a Secret&rsquo;s condition is met <em>during</em> another effect&rsquo;s resolution, the Secret&rsquo;s controller may reveal it, pausing the triggering effect. After the Secret resolves, the paused effect continues if still valid.</td></tr>
+          <tr><td class="effect-name">Special Play</td><td class="effect-note">Playing a card via an effect, not as an action. Cards from non-Hand zones played this way are always face-up. Counts as an Extra Action.</td></tr>
+          <tr><td class="effect-name">Spell face-down</td><td class="effect-note">Retains its Spell type underneath while face-down but is treated as a Secret. Effects targeting &ldquo;Secrets&rdquo; vs &ldquo;face-down Sorceries&rdquo; interact differently - the engine must track underlying type.</td></tr>
+          <tr><td class="effect-name">Pact</td><td class="effect-note">Extra Action grant, conditional on the controller currently controlling the named Spirit.</td></tr>
+          <tr><td class="effect-name">Recall</td><td class="effect-note">Moves cards from a specified zone to specified players&rsquo; hands as indicated by the effect.</td></tr>
+          <tr><td class="effect-name">Destroy</td><td class="effect-note">Field to owner&rsquo;s Discard Pile. Distinct from Sacrifice and Discard. Target must still be on the field at resolution or the effect Fizzles.</td></tr>
+          <tr><td class="effect-name">Indestructible</td><td class="effect-note">Prevents Destroy only. Can still be Sacrificed. Lost if the card is Silenced.</td></tr>
+          <tr><td class="effect-name">Copy</td><td class="effect-note">Acquires the name, type, and effects of the copied card. A Sorcery copy exists only on the pile and ceases when it leaves. An Incantation copy remains until the copy effect ends or it leaves the field.</td></tr>
+          <tr><td class="effect-name">Counters</td><td class="effect-note">Field cards only. Cease to exist if the card leaves the field. A card that Merges loses its counters; the host Incantation&rsquo;s counters remain.</td></tr>
+          <tr><td class="effect-name">Spirits</td><td class="effect-note">The only card type that explicitly cannot be targeted by any effect.</td></tr>
+          <tr><td class="effect-name">Infinite loops</td><td class="effect-note">Active player chooses a positive integer; the loop runs exactly that many times then breaks automatically.</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="phase" id="ph2">
+    <div class="phase-header">
+      <div class="phase-num">2</div>
+      <div class="phase-titles"><h3>Game Board UI</h3><div class="phase-desc">Built against a working rules engine - the UI reflects state, it does not own it</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>Board Layout</h4>
+      <p>Two mirrored player areas per the provided screenshots. Each side: spirit zone, three incantation slots, three sorcery slots, hand display along the bottom, deck and discard indicators. Shared centre: the spirit pool and spirit discard zone. Player HUD: soul count, Defense value, Banishing and Stealing modifiers, avatar portrait, turn timer, and action count (e.g., &ldquo;Actions: 1/2&rdquo;).</p>
+      <div class="screenshot-block">
+      <div class="screenshot-label">Reference - Game Board Scene</div>
+        <img src="images/Game Scene Layout.png" alt="Soulstealers Rising game board layout showing both player areas, spirit zones, incantation slots, sorcery slots, hand display, player HUD, and the resolution pile area">
+      </div>
+      <div class="callout callout-warn">For the browser build, the board must render cleanly at typical browser window sizes without depending on a fixed resolution. Expensive post-processing and render textures should be avoided.</div>
+      <h4>Card Rendering</h4>
+      <p>Frame colour matches card type - Spirit (yellow), Spell (red), Secret (green), Ritual (blue), Curse (purple), Prayer (grey). Face-down cards show only the card back. Hand size and face-down sorcery count are always visible to both players. Face-down identities are not. Hovering a face-up card shows full text.</p>
+      <h4>Player Inputs - Full Interaction List</h4>
+      <ul>
+        <li>Click to select from hand &rarr; click valid zone to play (or drag from hand to zone)</li>
+        <li>After selecting a targeted card, eligible targets highlight - click to confirm</li>
+        <li>When a card offers two effects (OR), a choice modal appears before the card enters the pile</li>
+        <li>&ldquo;Are you sure?&rdquo; confirmation prompts where the rules specify</li>
+        <li>&ldquo;Pass Priority&rdquo; button whenever a player holds priority</li>
+        <li>&ldquo;Respond&rdquo; trigger when a player holds priority and has a valid Secret in play</li>
+        <li>Select a play option when applicable (Normal Play, Secret Play, Merge)</li>
+        <li>Sacrifice prompt when activating a Prayer - choose a card to sacrifice or confirm 3-soul cost</li>
+        <li>&ldquo;Choose top 2 cards of discard pile&rdquo; selection UI for relevant card effects</li>
+        <li>Conspiracy: select face-down sorcery from hand to Put onto the field</li>
+        <li>Pass phase / end action phase</li>
+        <li>Open in-game options menu</li>
+      </ul>
+      <h4>Resolution Pile Display</h4>
+      <p>A visible indicator shows items on the pile top-to-bottom. The current top item awaiting resolution is clearly distinguished. Players can see what is pending and what the last resolved effect was.</p>
+      <h4>Ready to Reveal</h4>
+      <p>Each player&rsquo;s selected spirit shows as a face-down indicator during selection. Once both commit, &ldquo;Ready to Reveal&rdquo; triggers the simultaneous reveal - doubling as the round-start sync point in online play.</p>
+    </div>
+  </div>
+
+  <div class="phase" id="ph3">
+    <div class="phase-header">
+      <div class="phase-num">3</div>
+      <div class="phase-titles"><h3>Deck Builder</h3><div class="phase-desc">The two predetermined decks, full card browsing, and construction rule enforcement</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>Card Browser</h4>
+      <p>Paginated grid view matching the screenshot layout. Filterable by type, supertype, and keyword. Searchable by card name. Copy count per card shown. Type filter icons along the bottom row.</p>
+      <div class="screenshot-block">
+      <div class="screenshot-label">Reference - Deck Builder &amp; Menu Layout</div>
+        <img src="images/Menu Layout.png" alt="Soulstealers Rising deck builder interface showing card grid, filter row, type icons, and the deck panel on the right">
+      </div>
+      <h4>Construction Rules Enforced</h4>
+      <ul>
+        <li>40&ndash;60 cards per main deck</li>
+        <li>Maximum 3 copies of any card name <em>across main deck and side deck combined</em></li>
+        <li>Maximum 1 Gold card in the main deck; maximum 2 Gold cards across both decks combined</li>
+        <li>Side deck capped at 10 cards</li>
+      </ul>
+      <h4>The Two Predetermined Decks</h4>
+      <p>Both are loaded from authored data assets and selectable from a deck list. They can be opened in the builder for viewing and editing, and serve as the default deck options in Arena and Story Mode.</p>
+      <h4>Save / Load</h4>
+      <p>Deck data serialised to JSON via the shared save interface - desktop file on PC/Mac, browser persistent storage on WebGL. The two predetermined decks are bundled as permanent references that cannot be accidentally deleted.</p>
+    </div>
+  </div>
+
+  <div class="phase" id="ph4">
+    <div class="phase-header">
+      <div class="phase-num">4</div>
+      <div class="phase-titles"><h3>AI Opponent</h3><div class="phase-desc">Required for Story Mode and Arena practice - built on top of the rules engine</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>How the AI Works</h4>
+      <p>The AI reads from a view of the game state that reflects only what it would legitimately know: its own hand, the visible field state, soul totals, active modifiers, and the face-up discard pile. It does not know the opponent&rsquo;s hand or either deck order.</p>
+      <p>The AI is <strong>deck-aware and board-reactive</strong>: it has full knowledge of its own card list and the optimal plays for a given hand configuration, but adjusts decisions based on the live board state. This produces consistent behaviour without computationally heavy search algorithms - important for browser performance.</p>
+      <h4>Decision Points</h4>
+      <ul>
+        <li>Spirit selection at round start (weighing speed vs. spirit effect value)</li>
+        <li>Action phase planning - card play order, target selection, Prayer activation</li>
+        <li>Resolution pile responses - when to reveal a Secret given the current board</li>
+      </ul>
+      <h4>Difficulty Tiers</h4>
+      <p>Two tiers: a <strong>Story Mode tier</strong> that deliberately makes sub-optimal early choices to ease players in, and a <strong>full-strength Arena tier</strong>. Both use the same underlying framework with a configurable error rate parameter.</p>
+      <h4>Story Mode Extensions</h4>
+      <p>Each encounter can override standard rules - time limits, specific win conditions, soul-at-stake multipliers, Steal and Banish modifiers, multi-opponent configuration. The AI reads these encounter parameters and plays accordingly.</p>
+    </div>
+  </div>
+
+  <div class="phase" id="ph5">
+    <div class="phase-header">
+      <div class="phase-num">5</div>
+      <div class="phase-titles"><h3>Story Mode</h3><div class="phase-desc">Stripped-down campaign - 1v1 vs AI only, single Duel format, no Best-of-3</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>World Map</h4>
+      <p>A static map with authored encounter nodes. Green nodes are next available main story encounters (free to enter). Blue nodes are optional side encounters costing Gold Coins to access. Node connections are authored data - no pathfinding, only node selection.</p>
+      <h4>Encounter System</h4>
+      <p>Each encounter is a self-contained data object: the opponent&rsquo;s deck, their avatar, the soul-at-stake multiplier (X), any special battle conditions, and the rewards on victory. The game scene loads with the rules engine configured to that encounter&rsquo;s parameters. Special conditions are modular overrides on top of the standard rule set.</p>
+      <h4>Player Progression</h4>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Resource</th><th>Gained By</th><th>Spent On</th></tr></thead>
+        <tbody>
+          <tr><td>Souls</td><td>Winning battles, selling cards</td><td>Levelling up, purchasing cards in Soul Forge, wagered in battles</td></tr>
+          <tr><td>Gold Coins</td><td>Battle rewards, NPC exchanges</td><td>Accessing blue optional map nodes, NPC trades</td></tr>
+        </tbody>
+      </table></div>
+      <p>Player <strong>level</strong> gates map progression and Soul Forge card access. Player <strong>rank</strong> (Bronze &rarr; Silver &rarr; Gold &rarr; Initiate &rarr; Master &rarr; Grand Master, each with tiers) unlocks specific in-game events and awards a random Gold card on each promotion.</p>
+      <h4>Loss Penalty</h4>
+      <p>On a battle loss: the player loses <strong>(30 &times; X) souls</strong>, where X is set per encounter, plus the remaining soul total of defeating opponents. If total souls reach zero, it is game over and full progression resets - unless Easy Mode is active.</p>
+      <h4>Easy Mode</h4>
+      <p>Toggled at profile creation. Prevents the player&rsquo;s total souls from ever reaching zero (floors at 1), making a full game-over reset impossible. No other rules are changed.</p>
+      <h4>Save System</h4>
+      <p>Autosave per chapter plus a manual chapter save. Uses the shared save interface (desktop and browser compatible).</p>
+    </div>
+  </div>
+
+  <div class="phase" id="ph6">
+    <div class="phase-header">
+      <div class="phase-num">6</div>
+      <div class="phase-titles"><h3>Networking - 1v1 Online</h3><div class="phase-desc">Technology: Photon &middot; Host/Join model &middot; Specific Photon product TBC</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>Connection Options</h4>
+      <ul>
+        <li><strong>Host &amp; Join</strong> - one player creates a session and shares a short room code; the other player enters it to connect</li>
+        <li><strong>Quick Join</strong> - player enters a queue and is automatically connected to the first available host; times out if no host is found within a set window</li>
+      </ul>
+      <p>No ranked matchmaking, leaderboards, or tournament systems in the prototype.</p>
+      <h4>Synchronisation</h4>
+      <p>The host runs the authoritative game state. Clients send input events - card played, target selected, priority passed, spirit selection committed - to the host. The host validates each input against the rules engine, updates the game state, and broadcasts the result. The resolution pile requires the host to manage which player holds priority and gate inputs accordingly.</p>
+      <h4>Disconnection</h4>
+      <p>A player who disconnects or is inactive for one minute automatically loses. No reconnection in the prototype - the session ends and the remaining player wins.</p>
+      <div class="callout callout-warn">Photon supports browser builds, but the specific transport layer depends on which Photon product is chosen. Browser compatibility must be confirmed before Phase 6 begins.</div>
+    </div>
+  </div>
+
+  <div class="phase" id="ph7">
+    <div class="phase-header">
+      <div class="phase-num">7</div>
+      <div class="phase-titles"><h3>Soul Forge</h3><div class="phase-desc">Card collection display and acquisition, avatar selection - core functionality only</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>Cards</h4>
+      <p>The Soul Forge displays cards available for the player&rsquo;s collection, gated by player level. Cards are purchased with Souls. The card grid mirrors the Deck Builder browser. Purchasing is a live transaction - Souls are deducted, the card is added to the collection, and it becomes available in the Deck Builder immediately.</p>
+      <h4>Avatars</h4>
+      <p>Players select an avatar at profile creation and can change it from the Soul Forge. The selected avatar persists to the player profile and appears in the HUD and menus during games. Avatar unlock conditions are TBC - see Questions.</p>
+      <h4>Legend Forge</h4>
+      <p>A visible but locked placeholder for the prototype. Marked as coming soon within the UI.</p>
+    </div>
+  </div>
+
+  <div class="phase" id="ph8">
+    <div class="phase-header">
+      <div class="phase-num">8</div>
+      <div class="phase-titles"><h3>Tutorial</h3><div class="phase-desc">Built last - on top of all stable systems, using the real rules engine</div></div>
+    </div>
+    <div class="phase-body">
+      <h4>Structure</h4>
+      <p>An interactive walkthrough covering: the game&rsquo;s objective, card types and zones, spirit selection and the Ready to Reveal flow, the round and turn sequence, playing a card, the resolution pile and how priority works, responding with a Secret, core effects (Steal, Banish, Defense), and the win condition.</p>
+      <h4>Implementation</h4>
+      <p>A tutorial controller overlays guidance prompts directly on the live game scene using a scripted opponent - not the AI - that plays a predetermined sequence of cards. Each step restricts available inputs and advances when the player takes the correct action. Because the tutorial runs on top of the real rules engine, what players learn is exactly how the game works.</p>
+    </div>
+  </div>
+
+  <div id="buildorder" style="margin-top:48px;">
+    <div class="part-label">Summary</div>
+    <h2 style="font-family:'Cinzel',serif;font-size:20px;color:var(--text);margin-bottom:20px;">Build Order</h2>
+    <div class="build-order">
+      <div class="build-item"><div class="build-num">0</div><div class="build-text"><span class="build-title">Data Architecture</span><span class="build-reason">Foundation for every other system</span></div></div>
+      <div class="build-item"><div class="build-num">1</div><div class="build-text"><span class="build-title">Rules Engine</span><span class="build-reason">Most complex - gates all gameplay</span></div></div>
+      <div class="build-item"><div class="build-num">2</div><div class="build-text"><span class="build-title">Game Board UI</span><span class="build-reason">First playable moment</span></div></div>
+      <div class="build-item"><div class="build-num">3</div><div class="build-text"><span class="build-title">Deck Builder</span><span class="build-reason">Needs card data from client</span></div></div>
+      <div class="build-item"><div class="build-num">4</div><div class="build-text"><span class="build-title">AI Opponent</span><span class="build-reason">Required before Story Mode &amp; Arena</span></div></div>
+      <div class="build-item"><div class="build-num">5</div><div class="build-text"><span class="build-title">Story Mode</span><span class="build-reason">Needs rules + AI + encounter content</span></div></div>
+      <div class="build-item"><div class="build-num">6</div><div class="build-text"><span class="build-title">Networking</span><span class="build-reason">Isolated - uses Phase 0 game state</span></div></div>
+      <div class="build-item"><div class="build-num">7</div><div class="build-text"><span class="build-title">Soul Forge</span><span class="build-reason">Display and meta layer</span></div></div>
+      <div class="build-item"><div class="build-num">8</div><div class="build-text"><span class="build-title">Tutorial</span><span class="build-reason">Built on top of stable systems</span></div></div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span>Soulstealers Rising - Kickstarter Prototype</span>
+    <span>Target: September Launch &middot; Questions to be resolved at planning meeting</span>
+  </div>
+
+</main>
+<script src="script.js"></script>
+</body>
+</html>
