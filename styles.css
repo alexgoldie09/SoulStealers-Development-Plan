@@ -107,7 +107,6 @@ nav a.active .phase-badge {
 main {
   margin-left: var(--sidebar-w);
   flex: 1;
-  max-width: 900px;
   padding: 60px 56px 100px;
 }
 
