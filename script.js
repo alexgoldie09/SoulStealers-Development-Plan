@@ -1,5 +1,7 @@
 const sections = document.querySelectorAll('[id]');
 const links = document.querySelectorAll('#sidenav a');
+const hamburger = document.getElementById('hamburger');
+const overlay = document.getElementById('navOverlay');
 
 const observer = new IntersectionObserver(entries => {
   entries.forEach(entry => {
@@ -12,3 +14,16 @@ const observer = new IntersectionObserver(entries => {
 }, { rootMargin: '-20% 0px -70% 0px' });
 
 sections.forEach(s => observer.observe(s));
+
+function toggleNav() {
+  document.body.classList.toggle('nav-open');
+}
+
+hamburger.addEventListener('click', toggleNav);
+overlay.addEventListener('click', toggleNav);
+
+document.querySelectorAll('#sidenav a').forEach(link => {
+  link.addEventListener('click', () => {
+    document.body.classList.remove('nav-open');
+  });
+});
