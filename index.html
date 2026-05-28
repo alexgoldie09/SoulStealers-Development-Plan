@@ -33,6 +33,7 @@
     <a href="#ph7"><span class="phase-badge">7</span> Soul Forge</a>
     <a href="#ph8"><span class="phase-badge">8</span> Tutorial</a>
     <a href="#buildorder">Build Order</a>
+    <a href="#timeline">Timeline</a>
   </nav>
 </aside>
 
@@ -90,7 +91,8 @@
 
   <div class="arch-note">
     <strong>Core principle:</strong> The rules engine is built before anything else that touches gameplay. UI, AI, networking, and Story Mode are all consumers of it. Order is specific to avoid refactors later.<br><br>
-    The architecture follows a strict separation: <strong>Data</strong> (card definitions, game config) &rarr; <strong>Logic</strong> (rules engine, game states) &rarr; <strong>Presentation</strong> (board UI, menus). The rules engine is written in pure C# with zero Unity dependencies so it can be tested in isolation, the AI can reason over it cleanly, and the network layer can synchronise it without complexity.
+    The architecture follows a strict separation: <strong>Data</strong> (card definitions, game config) &rarr; <strong>Logic</strong> (rules engine, game states) &rarr; <strong>Presentation</strong> (board UI, menus). The rules engine is written in pure C# with zero Unity dependencies so it can be tested in isolation, the AI can reason over it cleanly, and the network layer can synchronise it without complexity.<br><br>
+    Communication between the logic and visual layers flows through a <strong>Command Queue</strong>. When the logic layer changes game state, it dispatches a Command object. Commands are executed sequentially - each one completes (including any animation) before the next begins. This means the logic layer can resolve effects instantly while the visual layer plays them out at its own pace, keeping the two fully decoupled.
   </div>
 
   <div class="phase" id="ph0">
@@ -126,6 +128,8 @@
       </ul>
       <h4>Save System Interface</h4>
       <p>Deck data, player progression, and settings all use a single save interface written to work on both desktop (local file) and browser (browser persistent storage). All other systems call this interface - nothing writes to disk directly. This must be established in Phase 0 or it becomes a refactor later.</p>
+      <h4>ID Bridge System</h4>
+      <p>The logic layer works exclusively with integer IDs, never with Unity GameObjects or MonoBehaviours. When a visual representation is created for a card or player, it registers itself with a unique ID. When a Command needs to animate something - move a card, show damage, remove a creature - it looks up the relevant GameObject by ID. This is what keeps the logic layer dependency-free and testable outside of Unity entirely.</p>
     </div>
   </div>
 
@@ -236,10 +240,18 @@
       <div class="screenshot-label">Reference - Game Board Scene</div>
         <img src="images/Game Scene Layout.png" alt="Soulstealers Rising game board layout showing both player areas, spirit zones, incantation slots, sorcery slots, hand display, player HUD, and the resolution pile area">
       </div>
+      <div class="screenshot-block">
+      <div class="screenshot-label">Prototype -Game Board (Research Build)</div>
+      <div class="video-embed">
+        <iframe src="https://www.youtube.com/embed/c-3tdTY6Q_0?si=tCgrTbLKirqhSL7L" allowfullscreen></iframe>
+      </div>
+      </div>
       <div class="callout callout-warn">For the browser build, the board must render cleanly at typical browser window sizes without depending on a fixed resolution. Expensive post-processing and render textures should be avoided.</div>
+      <div class="callout callout-note">All card and creature visuals are Unity UI elements (Canvas-based) rather than 3D world-space objects. Depth and draw order are managed through Canvas sorting layers and sorting orders. This is standard practice for card games and simplifies overlap handling significantly - particularly relevant for the hand display, the resolution pile indicator, and face-down cards in the sorcery zone.</div>
       <h4>Card Rendering</h4>
       <p>Frame colour matches card type - Spirit (yellow), Spell (red), Secret (green), Ritual (blue), Curse (purple), Prayer (grey). Face-down cards show only the card back. Hand size and face-down sorcery count are always visible to both players. Face-down identities are not. Hovering a face-up card shows full text.</p>
       <h4>Player Inputs - Full Interaction List</h4>
+      <p>Each card type has its own drag behaviour component rather than one monolithic input handler. Normal Play (drag to field), targeted effects (drag to target with arrow), and Secret reveals each have distinct implementations sharing a common interface. The input manager calls into whichever component is attached - it doesn&rsquo;t need to know what kind of card it&rsquo;s dealing with.</p>
       <ul>
         <li>Click to select from hand &rarr; click valid zone to play (or drag from hand to zone)</li>
         <li>After selecting a targeted card, eligible targets highlight - click to confirm</li>
@@ -317,6 +329,8 @@
       <p>Two tiers: a <strong>Story Mode tier</strong> that deliberately makes sub-optimal early choices to ease players in, and a <strong>full-strength Arena tier</strong>. Both use the same underlying framework with a configurable error rate parameter.</p>
       <h4>Story Mode Extensions</h4>
       <p>Each encounter can override standard rules - time limits, specific win conditions, soul-at-stake multipliers, Steal and Banish modifiers, multi-opponent configuration. The AI reads these encounter parameters and plays accordingly.</p>
+      <h4>TurnMaker Pattern</h4>
+      <p>The AI follows the same <strong>TurnMaker</strong> pattern as the human player - an abstract base class with a player subclass and an AI subclass, each overriding the turn start behaviour. The AI subclass runs its decision logic, dispatches the same Command objects a human player would, and ends its turn through the same interface. From the rules engine&rsquo;s perspective, there is no difference between a human action and an AI action.</p>
     </div>
   </div>
 
@@ -415,6 +429,115 @@
       <div class="build-item"><div class="build-num">8</div><div class="build-text"><span class="build-title">Tutorial</span><span class="build-reason">Built on top of stable systems</span></div></div>
     </div>
   </div>
+
+  <hr class="divider">
+
+  <div id="timeline" style="margin-top:48px;">
+    <div class="part-label">Milestone Plan</div>
+    <h2 style="font-family:'Cinzel',serif;font-size:20px;color:var(--text);margin-bottom:8px;">Development Timeline</h2>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:36px;">Start: 1 June 2026 &middot; Target Launch: 30 September 2026 &middot; Approx. 17 weeks</p>
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-date">1 Jun</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Development Start</div>
+          <div class="timeline-desc">Planning signed off, card data received from client, Unity 6 project initialised, repository set up.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">14 Jun</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <span class="timeline-tag">Phase 0</span>
+          <div class="timeline-title">Data Foundation Complete</div>
+          <div class="timeline-desc">All ScriptableObject card data models in place, serialisable game state class, zone system, ownership and control tracking, ID bridge system, and save interface established.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">1 Aug</div>
+        <div class="timeline-dot timeline-dot-gold"></div>
+        <div class="timeline-content">
+          <span class="timeline-tag">Phase 1</span>
+          <div class="timeline-title">Rules Engine Complete</div>
+          <div class="timeline-desc">Full state machine turn and round manager, spirit pool system, resolution stack with priority, all effect implementations, fizzle and negate logic, and infinite loop detection. The most complex milestone in the project.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">15 Aug</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <span class="timeline-tag">Phase 2</span>
+          <div class="timeline-title">First Playable Build</div>
+          <div class="timeline-desc">Game board UI complete with command queue wired up. Both players can take turns, play cards, pass priority, and reach a win or loss state. The first internal build that demonstrates the full game loop.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">22 Aug</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <span class="timeline-tag">Phase 3</span>
+          <div class="timeline-title">Deck Builder Complete</div>
+          <div class="timeline-desc">Both predetermined decks loaded and selectable. Card browser with filters and construction rules enforced. Save and load working across desktop and browser.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">5 Sep</div>
+        <div class="timeline-dot timeline-dot-gold"></div>
+        <div class="timeline-content">
+          <span class="timeline-tag">Phases 4 &amp; 5</span>
+          <div class="timeline-title">AI Opponent &amp; Story Mode Complete</div>
+          <div class="timeline-desc">Weighted scoring AI with difficulty tiers. Story Mode world map, encounter system, player progression, and loss and save mechanics all functional. These phases are built in parallel.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">15 Sep</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <span class="timeline-tag">Phase 6</span>
+          <div class="timeline-title">Networking Complete</div>
+          <div class="timeline-desc">1v1 online via Photon. Host and Join with room codes and Quick Join both working. Authoritative host model, disconnect handling, and browser-compatible transport confirmed.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">22 Sep</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <span class="timeline-tag">Phases 7 &amp; 8</span>
+          <div class="timeline-title">Soul Forge &amp; Tutorial Complete</div>
+          <div class="timeline-desc">Soul Forge card acquisition and avatar selection live. Interactive tutorial covering the full rule set built on top of the real rules engine.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-date">26 Sep</div>
+        <div class="timeline-dot timeline-dot-dim"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">QA &amp; Polish</div>
+          <div class="timeline-desc">Full playthrough testing across PC, Mac, and browser builds. Bug fixing, balance pass on the two starting decks, UI polish, and final performance review on WebGL.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item timeline-item-last">
+        <div class="timeline-date">30 Sep</div>
+        <div class="timeline-dot timeline-dot-launch"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Kickstarter Launch</div>
+          <div class="timeline-desc">Prototype build published and linked from the Kickstarter campaign page.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 
   <div class="doc-footer">
     <span>Soulstealers Rising - Kickstarter Prototype</span>

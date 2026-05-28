@@ -495,3 +495,111 @@ tbody td:first-child { color: var(--text); font-weight: 500; font-size: 13px; }
     padding: 60px 24px 80px;
   }
 }
+
+/* ── YOUTUBE / VIDEO EMBED ── */
+.video-embed {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.video-embed iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* ── TIMELINE ── */
+.timeline {
+  position: relative;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 99px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--crimson), var(--gold), var(--border));
+  z-index: 0;
+}
+.timeline-item {
+  display: grid;
+  grid-template-columns: 86px 28px 1fr;
+  padding-bottom: 32px;
+}
+.timeline-item-last { padding-bottom: 0; }
+.timeline-date {
+  text-align: right;
+  padding-right: 10px;
+  padding-top: 2px;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+}
+.timeline-dot {
+  display: flex;
+  justify-content: center;
+  padding-top: 3px;
+  position: relative;
+  z-index: 1;
+}
+.timeline-dot::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--crimson);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 2px var(--crimson);
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.timeline-dot-gold::after {
+  background: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.timeline-dot-dim::after {
+  background: var(--border-bright);
+  box-shadow: 0 0 0 2px var(--border-bright);
+}
+.timeline-dot-launch::after {
+  width: 16px;
+  height: 16px;
+  background: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold), 0 0 12px rgba(196,154,60,0.4);
+}
+.timeline-content {
+  padding-left: 16px;
+}
+.timeline-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 2px 9px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+  background: rgba(192,69,69,0.12);
+  border: 1px solid rgba(192,69,69,0.3);
+  color: var(--crimson);
+}
+.timeline-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+  line-height: 1.3;
+}
+.timeline-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
