@@ -392,6 +392,63 @@ tbody td:first-child { color: var(--text); font-weight: 500; font-size: 13px; }
   font-size: 12px;
 }
 
+/* ── DOWNLOAD BUTTONS ── */
+.download-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--crimson);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  text-decoration: none;
+  transition: all 0.18s;
+  min-width: 200px;
+}
+.download-btn:hover {
+  border-color: var(--border-bright);
+  border-left-color: var(--gold);
+  background: var(--surface-2);
+}
+.download-icon {
+  font-size: 22px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  line-height: 1;
+}
+.download-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+.download-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.download-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+.download-arrow {
+  font-size: 18px;
+  color: var(--crimson);
+  flex-shrink: 0;
+  transition: transform 0.18s;
+}
+.download-btn:hover .download-arrow {
+  transform: translateY(3px);
+}
+
 /* ── SCREENSHOTS ── */
 .screenshot-block {
   margin: 20px 0 24px;
