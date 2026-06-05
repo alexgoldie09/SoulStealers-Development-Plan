@@ -167,7 +167,7 @@
       <p>Implements the complete game sequence: Beginning of Round &rarr; Spirit pool deal &rarr; each player selects a spirit &rarr; Ready to Reveal &rarr; simultaneous reveal &rarr; ascending spirit rank determines turn order. For each turn: Start of Turn triggers (Spirit &rarr; Curses &rarr; Rituals) &rarr; Action Phase &rarr; End of Turn triggers &rarr; Draw Phase &rarr; End of Round.</p>
       <div class="callout callout-note">The Turn &amp; Round Manager is implemented using a state machine pattern, with each phase (BeginRound, SpiritSelection, StartOfTurn, ActionPhase, EndOfTurn, DrawPhase, EndOfRound) as a discrete state owning its own logic and transition conditions. The Resolution Stack runs as a separate peer system that communicates via events, keeping it decoupled from the state flow.</div>
       <h4>Spirit Pool System</h4>
-      <p>The spirit pool depletes across rounds and only resets when fully exhausted. In a 2-player game with 12 spirits, the pool decrements by 2 each round. The deal count scales with pool size:</p>
+      <p>The spirit pool depletes across rounds and only resets when fully exhausted. In a 2-player game with 16 spirits, the pool decrements by 2 each round. The deal count scales with pool size:</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Pool Size</th><th>Cards Dealt to Each Player</th></tr></thead>
         <tbody>
@@ -177,9 +177,9 @@
           <tr><td>2</td><td>1 (randomly assigned)</td></tr>
         </tbody>
       </table></div>
-      <p>When the pool hits zero - all 12 spirits used across six rounds - all 12 are restored and the cycle begins again.</p>
-      <h4>Spirit Selection &amp; Ready to Reveal</h4>
-      <p>Each player privately selects one spirit; unchosen spirits return to the pool. The player clicks &ldquo;Ready to Reveal.&rdquo; When both players (or player and AI) have committed, the reveal fires simultaneously - the round-start sync point in both local and online play.</p>
+      <p>When the pool hits zero - all 16 spirits used across eight rounds - all 16 are restored and the cycle begins again.</p>
+      <h4>Spirit Selection</h4>
+      <p>Once spirits are dealt, both players privately select one from their choices simultaneously. A visible countdown timer runs for both players - when a player confirms their selection the timer stops on their side. Once both players have selected, the round begins and both spirits are revealed at the same moment. If a player fails to select before the timer expires, one of their dealt spirits is automatically assigned at random. Unchosen spirits return to the pool regardless of whether the selection was manual or auto-assigned.</p>
       <p><strong>Note:</strong> Spirit cards cannot be targeted, taken, given, Destroyed, Silenced, or moved to non-Spirit zones by any effect. Spirit exchanges are only permitted as an explicit result of an effect that states so.</p>
       <h4>Action System</h4>
       <p>Each player has <strong>2 actions per turn</strong>, spent by: playing a card face-up (Normal Play), playing a sorcery face-down (Secret Play), or revealing a face-down spell. Extra Actions from Pact effects or card text do not cost from this budget. Recycling (once per turn) and Prayer activation are not actions.</p>
